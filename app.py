@@ -199,29 +199,33 @@ elif st.session_state.step == 'MATRIX_LOOP':
     # Force sequential matrix rendering with key-state tracking to prevent data loss
     st.session_state.c1_input = st.selectbox(q1, options_list)
     
+    show_submit = False  # Control variable to hide button until full trajectory sequence or freeze event
+    
     if st.session_state.c1_input != txt('opt_empty'):
         st.session_state.c2_input = st.text_area(q2, value=st.session_state.c2_input, key="c2_text")
         
     if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
         st.session_state.c3_input = st.text_area(q3, value=st.session_state.c3_input, key="c3_text")
+        show_submit = True  # Unlock submit button here so they can hit it to trigger the potential freeze
         
     if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "" and st.session_state.c3_input.strip() != "":
         st.session_state.c4_input = st.text_area(q4, value=st.session_state.c4_input, key="c4_text")
 
     # Trigger action execution controls and synchronize states before transition
-    if st.button(txt('submit')):
-        # Sync widget keys to session state values explicitly
-        if "c2_text" in st.session_state: st.session_state.c2_input = st.session_state.c2_text
-        if "c3_text" in st.session_state: st.session_state.c3_input = st.session_state.c3_text
-        if "c4_text" in st.session_state: st.session_state.c4_input = st.session_state.c4_text
+    if show_submit:
+        if st.button(txt('submit')):
+            # Sync widget keys to session state values explicitly
+            if "c2_text" in st.session_state: st.session_state.c2_input = st.session_state.c2_text
+            if "c3_text" in st.session_state: st.session_state.c3_input = st.session_state.c3_text
+            if "c4_text" in st.session_state: st.session_state.c4_input = st.session_state.c4_text
 
-        # Enforcement of the Active Friction Constraint Check Engine
-        if st.session_state.c3_input.strip() == "":
-            st.session_state.freeze_count += 1
-            st.markdown(f'<div class="freeze-box">{txt("freeze_msg")}</div>', unsafe_allow_html=True)
-        else:
-            st.session_state.step = 'SURVEY_LAYER'
-            st.rerun()
+            # Enforcement of the Active Friction Constraint Check Engine
+            if st.session_state.c3_input.strip() == "":
+                st.session_state.freeze_count += 1
+                st.markdown(f'<div class="freeze-box">{txt("freeze_msg")}</div>', unsafe_allow_html=True)
+            else:
+                st.session_state.step = 'SURVEY_LAYER'
+                st.rerun()
 
 # STAGE F: Systemic Telemetry & Validation Survey Layer Layout
 elif st.session_state.step == 'SURVEY_LAYER':
