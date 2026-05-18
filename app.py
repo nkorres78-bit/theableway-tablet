@@ -1,195 +1,296 @@
 import streamlit as st
-import datetime
+import time
+import pandas as pd
+from datetime import datetime
 
-# 1. INITIALIZE WEB INTERFACE & DEVICE ENVIRONMENT CONFIG
-st.set_page_config(page_title="TheABLEWay - HI-OS Engine Workspace", layout="wide", initial_sidebar_state="expanded")
+# ==============================================================================
+# 1. INITIAL SYSTEM CONFIGURATION & UI SETUP
+# ==============================================================================
+st.set_page_config(
+    page_title="TheABLEWay System",
+    page_icon="🧩",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
-# 2. SESSION STATE MANAGEMENT & STATE ENGINE INITIALIZATION
-if "language" not in st.session_state:
-    st.session_state.language = "GR"  # Default fallback language setting
-if "current_phase" not in st.session_state:
-    st.session_state.current_phase = "Discover"  # Initial system state
-if "freeze_count" not in st.session_state:
-    st.session_state.freeze_count = 0
-if "telemetry_log" not in st.session_state:
-    st.session_state.telemetry_log = []
+# Custom CSS for production-grade visual anchors and heavy-duty active friction
+st.markdown("""
+<style>
+    .reportview-container .main .block-container { max-width: 600px; padding-top: 2rem; }
+    .stButton>button { width: 100%; border-radius: 12px; height: 3.5rem; font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem; }
+    div[data-baseweb="textarea"] { border-radius: 12px; }
+    .freeze-box { background-color: #ffe6e6; border: 3px solid #ff4d4d; padding: 1.5rem; border-radius: 16px; color: #cc0000; font-weight: bold; margin-bottom: 1.5rem; text-align: center; }
+    .success-box { background-color: #e6f9ec; border: 3px solid #2db359; padding: 1.5rem; border-radius: 16px; color: #1a6633; font-weight: bold; margin-bottom: 1.5rem; text-align: center; }
+    .action-card { background-color: #f7f9fa; border-left: 6px solid #ff9900; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+</style>
+""", unsafe_allow_html=True)
 
-# Workflow State Lock Flags
-if "c3_freeze_active" not in st.session_state:
-    st.session_state.c3_freeze_active = False
-if "c4_freeze_active" not in st.session_state:
-    st.session_state.c4_freeze_active = False
+# Initialize programmatic telemetry and state tracking arrays
+if 'step' not in st.session_state: st.session_state.step = 'LANG_SELECTION'
+if 'lang' not in st.session_state: st.session_state.lang = 'GR'
+if 'profile' not in st.session_state: st.session_state.profile = None
+if 'category' not in st.session_state: st.session_state.category = None
+if 'duration' not in st.session_state: st.session_state.duration = None
+if 'sub_step' not in st.session_state: st.session_state.sub_step = 'INPUT_PHASE'
 
-# 3. PRODUCTION LOCALIZATION DICTIONARY (EN / GR)
-LOCALIZATION = {
-    "EN": {
-        "app_title": "HI-OS: Human Innovation Operating System",
-        "app_subtitle": "TheABLEWay — Cybernetic State Matrix Engine",
-        "phase_header": "Active Matrix Row (Phase)",
-        "sidebar_header": "Systemic Core Engines",
-        "maslow_status": "🔒 Maslow Safety Axis: Active & Validated",
-        "maslow_caption": "Biological & physical safety parameters verified. Autonomy gate cleared.",
-        "jung_status": "⚖️ Jungian Balance Axis",
-        "jung_desc": "Reality Function (Sensing-Thinking) ── Balancing ── Possibilities Function (Intuition-Feeling)",
-        "erikson_status": "📈 Psychosocial Transition Axis",
-        "erikson_desc": "Identity vs. Role Confusion ➔ Learning to Become",
-        "c1_title": "C1: Choose (Defaults) Stance & Parameters",
-        "c2_title": "C2: Collect (Mapping) Data Points & Metrics",
-        "c3_title": "C3: Connect (Feedback) Mistakes & Risk Assessment",
-        "c4_title": "C4: Create (Incentives) Solution / MVP Promise",
-        "btn_submit": "Execute State Transition Clearance (submit_solution)",
-        "err_c3_freeze": "🚨 WORKFLOW FREEZE (C3 Breach): Empty input detected on C3 (Connect / Mistakes). The negative feedback loop forces mistake analysis to protect your Allostatic Budget from Cultural Drift.",
-        "err_c4_freeze": "🚨 WORKFLOW FREEZE (C4 Breach): Empty input detected on C4 (Create / Solution). System locked. Execution state transition clearance withheld until an MVP path or solution string is specified.",
-        "success_msg": "Cybernetic verification check passed. Row State transitioned successfully.",
-        "telemetry_header": "Cybernetic Operational Telemetry Logs",
-        "telemetry_metric": "Total Workflow Freeze Interventions Registered"
+# Telemetry data storage metrics
+if 't_start' not in st.session_state: st.session_state.t_start = time.time()
+if 'freeze_count' not in st.session_state: st.session_state.freeze_count = 0
+if 'c1_input' not in st.session_state: st.session_state.c1_input = ""
+if 'c2_input' not in st.session_state: st.session_state.c2_input = ""
+if 'c3_input' not in st.session_state: st.session_state.c3_input = ""
+if 'c4_input' not in st.session_state: st.session_state.c4_input = ""
+
+# ==============================================================================
+# 2. LOCALIZED SEMANTIC DICTIONARIES (LEXICON SCALABILITY)
+# ==============================================================================
+LEXICON = {
+    'GR': {
+        'welcome': "🧩 TheABLEWay System",
+        'sub': "Γνωστική Σκαλωσιά Διαχείρισης Άγχους",
+        'everyday': "🏡 Καθημερινά Προβλήματα",
+        'business': "💼 Επαγγελματικά / Business",
+        'short_trip': "⏱️ Σύντομη Διαδρομή (< 10 λεπτά)",
+        'long_trip': "🗺️ Μεγάλη Διαδρομή (> 15 λεπτά)",
+        'q_cat': "Πού εντοπίζεται το ζόρι σήμερα;",
+        'cat_love': "❤️ Σχέσεις & Ερωτικά",
+        'cat_fam': "👪 Οικογένεια & Φίλοι",
+        'cat_money': "💸 Δουλειά & Οικονομικά",
+        'cat_gen': "🌀 Άλλο / Προσωπικό",
+        'freeze_msg': "⚠️ WORKFLOW FREEZE! Δεν μπορείς να πας στη λύση αν δεν κοιτάξεις πρώτα το λάθος σου. Συμπλήρωσε το πεδίο.",
+        'submit_analysis': "Ανάλυση Λάθους ➔",
+        'submit_solution': "Δημιουργία Action Plan ✔️",
+        'survey_q': "Βοήθησε αυτή η διαδρομή να μειωθεί το άγχος σου;",
+        'survey_1': "Καθόλου", 'survey_2': "Λίγο", 'survey_3': "Αρκετά", 'survey_4': "Πολύ",
+        'final_thanks': "💯 Μπράβο! Η γνωστική σου σκαλωσιά ολοκληρώθηκε. Μόλις άλλαξες τον τρόπο που σκέφτεσαι.",
+        'restart': "Νέα Διαδρομή",
+        'c1_q_biz': "Ποιοι άνθρωποι, ομάδα ή ρόλοι βρίσκονται στο επίκεντρο του προβλήματος;",
+        'c1_q_love': "Ποιος άνθρωπος εμπλέκεται στη σχέση αυτή τη στιγμή;",
+        'c2_q_biz': "Ποια είναι η πιο επείγουσα ανάγκη που πρέπει να καλυφθεί άμεσα;",
+        'c2_q_love': "Τι έχεις περισσότερο ανάγκη από αυτή τη σχέση αυτή τη στιγμή;",
+        'c3_q_biz': "Ποιο είναι το κυριότερο λάθος, παράλειψη ή παρανόηση που έχει γίνει;",
+        'c3_q_love': "Ποιο ήταν το δικό σου λάθος ή η δική σου λάθος αντίδραση στον τελευταίο τσακωμό;",
+        'c4_q_biz': "Ποια είναι η πρώτη, μικρή και άμεση κίνηση που μπορείς να κάνεις;",
+        'c4_q_love': "Ποιο είναι το πρώτο, μικρό βήμα ή μήνυμα που θα στείλεις μόλις κατεβείς;",
+        'opt_empty': "[Επίλεξε...]",
+        'opt_me': "Εγώ ο ίδιος",
+        'opt_team': "Συνεργάτης / Ομάδα",
+        'opt_mgmt': "Διοίκηση / Αφεντικό",
+        'opt_ext': "Εξωτερικός / Τρίτος",
+        'opt_partner': "Σύντροφος / Σύζυγος",
+        'opt_ex': "Πρώην",
+        'opt_crush': "Πρόσωπο που με ενδιαφέρει",
+        'opt_family': "Γονέας / Παιδί / Συγγενής",
+        'opt_friend': "Φίλος / Κολλητός",
+        'ap_title': "📝 Το Προσωπικό σου Action Plan",
+        'ap_context': "• Η Κατάσταση (Ποιος):",
+        'ap_need': "• Η Ανάγκη σου (Τι):",
+        'ap_mistake': "• Το Σημείο που Κόλλησες (Γιατί):",
+        'ap_action': "• Η Δέσμευσή σου (Πώς):",
+        'continue': "Συνέχεια στην Αξιολόγηση ➔"
     },
-    "GR": {
-        "app_title": "HI-OS: Human Innovation Operating System",
-        "app_subtitle": "TheABLEWay — Κυβερνητική Μηχανή Μήτρας Κατάστασης",
-        "phase_header": "Ενεργή Γραμμή Μήτρας (Φάση)",
-        "sidebar_header": "Πυρήνες Συστημικής Δομής",
-        "maslow_status": "🔒 Άξονας Ασφάλειας Maslow: Ενεργός & Έγκυρος",
-        "maslow_caption": "Οι βιολογικές & φυσικές ανάγκες ασφάλειας επαληθεύτηκαν. Έγκριση πύλης αυτονομίας.",
-        "jung_status": "⚖️ Άξονας Εξισορρόπησης Jung",
-        "jung_desc": "Λειτουργία Πραγματικότητας (Αίσθηση-Σκέψη) ── Αντίβαρο ── Λειτουργία Πιθανοτήτων (Διαίσθηση-Συναίσθημα)",
-        "erikson_status": "📈 Άξονας Ψυχοκοινωνικής Μετάβασης",
-        "erikson_desc": "Ταυτότητα έναντι Σύγχυσης Ρόλων ➔ Μαθαίνω να Γίνομαι",
-        "c1_title": "C1: Choose (Defaults) Στρατηγική & Παράμετροι",
-        "c2_title": "C2: Collect (Mapping) Συλλογή Δεδομένων & Μετρικές",
-        "c3_title": "C3: Connect (Feedback) Λάθη & Αξιολόγηση Ρίσκου",
-        "c4_title": "C4: Create (Incentives) Πρόταση Λύσης / Υπόσχεση MVP",
-        "btn_submit": "Εκτέλεση Έγκρισης Μετάβασης Φάσης (submit_solution)",
-        "err_c3_freeze": "🚨 WORKFLOW FREEZE (Παραβίαση C3): Εντοπίστηκε κενό πεδίο στο C3 (Connect / Mistakes). Υποχρεωτική ανάλυση σφαλμάτων για προστασία του Allostatic Budget από το Cultural Drift.",
-        "err_c4_freeze": "🚨 WORKFLOW FREEZE (Παραβίαση C4): Εντοπίστηκε κενό πεδίο στο C4 (Create / Solution). Το σύστημα κλειδώθηκε. Η έγκριση μετάβασης αναστέλλεται μέχρι να δοθεί μια λύση ή υπόσχεση MVP.",
-        "success_msg": "Οι κυβερνητικοί έλεγχοι πέτυχαν. Η κατάσταση της φάσης άλλαξε επιτυχώς.",
-        "telemetry_header": "Κυβερνητικά Δεδομένα Τηλεμετρίας & Έλεγχος Συστημάτων",
-        "telemetry_metric": "Συνολικές Παρεμβάσεις Workflow Freeze"
+    'EN': {
+        'welcome': "🧩 TheABLEWay System",
+        'sub': "Cognitive Scaffolding Framework",
+        'everyday': "🏡 Everyday Life Problems",
+        'business': "💼 Business / Corporate",
+        'short_trip': "⏱️ Short Trip (< 10 mins)",
+        'long_trip': "🗺️ Long Trip (> 15 mins)",
+        'q_cat': "Where is the friction originating today?",
+        'cat_love': "❤️ Relationships & Love",
+        'cat_fam': "👪 Family & Friends",
+        'cat_money': "💸 Work & Finances",
+        'cat_gen': "🌀 Personal / Other",
+        'freeze_msg': "⚠️ WORKFLOW FREEZE! You cannot bypass systemic failure parameters. Analyze the core mistake to unlock execution.",
+        'submit_analysis': "Analyze Error ➔",
+        'submit_solution': "Generate Action Plan ✔️",
+        'survey_q': "Did this structured trajectory reduce your situational anxiety?",
+        'survey_1': "Not at all", 'survey_2': "Slightly", 'survey_3': "Significantly", 'survey_4': "Completely",
+        'final_thanks': "💯 Execution Verified! Your cognitive scaffolding is complete. Prediction patterns updated.",
+        'restart': "Restart System",
+        'c1_q_biz': "Which individuals, teams, or roles are at the core of this operational block?",
+        'c1_q_love': "Who is the other individual involved in this relational friction?",
+        'c2_q_biz': "What is the most critical demand or need that must be satisfied immediately?",
+        'c2_q_love': "What core need do you require from this dynamic right now?",
+        'c3_q_biz': "What is the fundamental error, omission, or oversight committed so far?",
+        'c3_q_love': "What was your own error, oversight, or reactive misstep during the last friction point?",
+        'c4_q_biz': "What is the exact, single low-risk macro-action you will execute immediately?",
+        'c4_q_love': "What is the first micro-step or message you will send as soon as you exit the vehicle?",
+        'opt_empty': "[Select...]",
+        'opt_me': "Myself",
+        'opt_team': "Team Member / Peer",
+        'opt_mgmt': "Management / Boss",
+        'opt_ext': "External / Third Party",
+        'opt_partner': "Partner / Spouse",
+        'opt_ex': "Ex-partner",
+        'opt_crush': "Someone I am interested in",
+        'opt_family': "Parent / Child / Relative",
+        'opt_friend': "Friend / Close Peer",
+        'ap_title': "📝 Your Personal Action Plan",
+        'ap_context': "• Target Node (Who):",
+        'ap_need': "• Core Objective (What):",
+        'ap_mistake': "• Systemic Friction Point (Why):",
+        'ap_action': "• Strategic Commitment (How):",
+        'continue': "Proceed to Anxiety Review ➔"
     }
 }
 
-# Bind localized variables
-lang_code = st.session_state.language
-tx = LOCALIZATION[lang_code]
+# Helper to easily pull text values from dictionary
+def txt(key):
+    return LEXICON[st.session_state.lang][key]
 
-# 4. APP INTERFACE LAYOUT & BRANDING HEADERS
-st.title(tx["app_title"])
-st.subheader(tx["app_subtitle"])
+# ==============================================================================
+# 3. INTERACTIVE DETERMINISTIC STATE MACHINE FLOWS
+# ==============================================================================
 
-# Language Toggle Switch Bar
-col_spacer, col_lang = st.columns([6, 1])
-with col_lang:
-    ui_lang = st.selectbox("🌐 Language/Γλώσσα", ["GR", "EN"], index=0 if lang_code == "GR" else 1)
-    if ui_lang != st.session_state.language:
-        st.session_state.language = ui_lang
-        st.rerun()
+# STAGE A: Language Selection UI Layout
+if st.session_state.step == 'LANG_SELECTION':
+    st.title("🧩 TheABLEWay")
+    st.subheader("Select Language / Επιλογή Γλώσσας")
+    col1, col2 = st.columns(2)
+    if col1.button("ΕΛΛΗΝΙΚΑ 🇬🇷"):
+        st.session_state.lang = 'GR'; st.session_state.step = 'DURATION_SELECTION'; st.rerun()
+    if col2.button("ENGLISH 🇺🇸"):
+        st.session_state.lang = 'EN'; st.session_state.step = 'DURATION_SELECTION'; st.rerun()
 
-st.divider()
+# STAGE B: Allostatic Adaptive Duration Gating Layout 
+elif st.session_state.step == 'DURATION_SELECTION':
+    st.title(txt('welcome'))
+    st.subheader(txt('sub'))
+    if st.button(txt('short_trip')): st.session_state.duration = 'SHORT'; st.session_state.step = 'PROFILE_SELECTION'; st.rerun()
+    if st.button(txt('long_trip')): st.session_state.duration = 'LONG'; st.session_state.step = 'PROFILE_SELECTION'; st.rerun()
 
-# 5. SIDEBAR COMPONENT: CORE GEOMETRIC AXES VISUALIZER
-with st.sidebar:
-    st.header(tx["sidebar_header"])
+# STAGE C: Context Archetype Evaluation Layout
+elif st.session_state.step == 'PROFILE_SELECTION':
+    st.title(txt('welcome'))
+    if st.button(txt('everyday')): st.session_state.profile = 'EVERYDAY'; st.session_state.step = 'CATEGORY_SELECTION'; st.rerun()
+    if st.button(txt('business')): st.session_state.profile = 'BUSINESS'; st.session_state.category = 'CORPORATE'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
+
+# STAGE D: Category Granularity Segmentation Layout
+elif st.session_state.step == 'CATEGORY_SELECTION':
+    st.title(txt('welcome'))
+    st.subheader(txt('q_cat'))
+    if st.button(txt('cat_love')): st.session_state.category = 'LOVE'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
+    if st.button(txt('cat_fam')): st.session_state.category = 'FAMILY'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
+    if st.button(txt('cat_money')): st.session_state.category = 'FINANCE'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
+    if st.button(txt('cat_gen')): st.session_state.category = 'GENERAL'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
+
+# STAGE E: Production Execution Matrix Layer (The 4 Cs Matrix Layout)
+elif st.session_state.step == 'MATRIX_LOOP':
+    st.title(txt('welcome'))
     
-    # Axis 1: Maslow Control
-    st.success(tx["maslow_status"])
-    st.caption(tx["maslow_caption"])
-    st.markdown("---")
-    
-    # Axis 2: Jungian Equilibrium Control
-    st.markdown(f"#### {tx['jung_status']}")
-    st.info(tx["jung_desc"])
-    st.markdown("---")
-    
-    # Axis 3: Psychosocial Evolution Control
-    st.markdown(f"#### {tx['erikson_status']}")
-    st.warning(tx["erikson_desc"])
-
-# 6. WORKFLOW MATRIX INTERFACE & PARAMETER COLLECTION GRID
-st.header(f"📍 {tx['phase_header']}: `{st.session_state.current_phase.upper()}`")
-
-# Informative nodes map tracking active EntreComp profiles
-phase_mapping_directory = {
-    "Discover": "#1 Coping with VUCA, #2 Ethical Thinking, #14 Mistakes Assessment, #13 Enjoy Creativity",
-    "Define": "#7 Purpose & Direction, #5 Mobilizing Resources, #6 Learning to Become, #15 Proposal MVP",
-    "Develop": "#3 Spotting Opportunities, #4 Planning & Management, #8 Working with Others, #12 Learning to Co-create",
-    "Deliver": "#9 Taking the Initiative, #10 Managing Performance, #11 Views / Perspectives, #16 Product / Service"
-}
-st.caption(f"**EntreComp Profile Alignment:** {phase_mapping_directory[st.session_state.current_phase]}")
-
-# Matrix Formulation Form
-with st.form(key="hi_os_matrix_form"):
-    c1_data = st.text_input(tx["c1_title"])
-    c2_data = st.text_area(tx["c2_title"])
-    c3_data = st.text_area(tx["c3_title"])
-    c4_data = st.text_area(tx["c4_title"])
-    
-    # "submit_solution" trigger mechanism button
-    submit_solution = st.form_submit_button(label=tx["btn_submit"])
-
-# 7. CYBERNETIC VALIDATION PATH & DOUBLE CRITICAL CONSTRAINT LOOP
-if submit_solution:
-    # Clear visual state flags from previous loop cycles
-    st.session_state.c3_freeze_active = False
-    st.session_state.c4_freeze_active = False
-
-    # Stance Check 1: Operational C3 Empty Constraint Verification
-    if not c3_data.strip():
-        st.session_state.c3_freeze_active = True
-        st.session_state.freeze_count += 1
-        
-    # Stance Check 2: Identical C4 Empty Constraint Verification
-    if not c4_data.strip():
-        st.session_state.c4_freeze_active = True
-        st.session_state.freeze_count += 1
-
-    # Logic Evaluator: If any condition broke, store event telemetry payload
-    if st.session_state.c3_freeze_active or st.session_state.c4_freeze_active:
-        telemetry_payload = {
-            "timestamp": str(datetime.datetime.now()),
-            "system_state_phase": st.session_state.current_phase,
-            "execution_status": "WORKFLOW_FREEZE_TRIGGERED",
-            "c3_breached": st.session_state.c3_freeze_active,
-            "c4_breached": st.session_state.c4_freeze_active,
-            "accumulated_freeze_telemetry": st.session_state.freeze_count
-        }
-        st.session_state.telemetry_log.append(telemetry_payload)
+    # Dynamic Options Assignment based on Category Context Map
+    if st.session_state.category == 'LOVE':
+        options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_partner'), txt('opt_ex'), txt('opt_crush')]
+        q1, q2, q3, q4 = txt('c1_q_love'), txt('c2_q_love'), txt('c3_q_love'), txt('c4_q_love')
+    elif st.session_state.category == 'FAMILY':
+        options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_family'), txt('opt_friend')]
+        q1, q2, q3, q4 = txt('c1_q_love'), txt('c2_q_love'), txt('c3_q_love'), txt('c4_q_love')
     else:
-        # Clearance Granted: Progress sequentially through Design Thinking 4Ds Matrix Axis
-        state_transition_map = {
-            "Discover": "Define",
-            "Define": "Develop",
-            "Develop": "Deliver",
-            "Deliver": "Discover"
-        }
-        previous_phase = st.session_state.current_phase
-        st.session_state.current_phase = state_transition_map[previous_phase]
+        options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_team'), txt('opt_mgmt'), txt('opt_ext')]
+        q1, q2, q3, q4 = txt('c1_q_biz'), txt('c2_q_biz'), txt('c3_q_biz'), txt('c4_q_biz')
+
+    # STEP E1: Input Validation Phase (C1, C2, C3)
+    if st.session_state.sub_step == 'INPUT_PHASE':
+        st.session_state.c1_input = st.selectbox(q1, options_list)
         
-        # Log successful operational clearance metadata packet
-        telemetry_payload = {
-            "timestamp": str(datetime.datetime.now()),
-            "execution_status": "STATE_TRANSITION_CLEARANCE_GRANTED",
-            "transition_vector": f"{previous_phase} ➔ {st.session_state.current_phase}",
-            "accumulated_freeze_telemetry": st.session_state.freeze_count
-        }
-        st.session_state.telemetry_log.append(telemetry_payload)
-        st.toast(tx["success_msg"], icon="✅")
+        if st.session_state.c1_input != txt('opt_empty'):
+            st.session_state.c2_input = st.text_area(q2, value=st.session_state.c2_input, key="c2_text")
+            
+        if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
+            st.session_state.c3_input = st.text_area(q3, value=st.session_state.c3_input, key="c3_text")
+            
+        if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
+            if st.button(txt('submit_analysis')):
+                if "c2_text" in st.session_state: st.session_state.c2_input = st.session_state.c2_text
+                if "c3_text" in st.session_state: st.session_state.c3_input = st.session_state.c3_text
+                
+                # Active Friction Enforcement Check
+                if st.session_state.c3_input.strip() == "":
+                    st.session_state.freeze_count += 1
+                    st.markdown(f'<div class="freeze-box">{txt("freeze_msg")}</div>', unsafe_allow_html=True)
+                else:
+                    st.session_state.sub_step = 'SOLUTION_PHASE'
+                    st.rerun()
+
+    # STEP E2: Solution Generation Isolated Phase (C4 only)
+    elif st.session_state.sub_step == 'SOLUTION_PHASE':
+        st.markdown(f"**{q3}**\n\n*{st.session_state.c3_input}*")
+        st.write("---")
+        st.session_state.c4_input = st.text_area(q4, value=st.session_state.c4_input, key="c4_text")
+        
+        if st.button(txt('submit_solution')):
+            if "c4_text" in st.session_state: st.session_state.c4_input = st.session_state.c4_text
+            st.session_state.step = 'ACTION_PLAN_DISPLAY'
+            st.rerun()
+
+# STAGE F: Mirror Feedback Output & Personal Narrative Card Layout
+elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
+    st.title(txt('welcome'))
+    
+    # The Mirror Scaffolding Narrative Card Output Render
+    st.markdown(f"""
+    <div class="action-card">
+        <h3>{txt('ap_title')}</h3>
+        <p><b>{txt('ap_context')}</b> {st.session_state.c1_input}</p>
+        <p><b>{txt('ap_need')}</b> {st.session_state.c2_input}</p>
+        <p><b>{txt('ap_mistake')}</b> {st.session_state.c3_input}</p>
+        <p><b>{txt('ap_action')}</b> <span style='color:#ff9900; font-size:1.2rem;'><b>{st.session_state.c4_input}</b></span></p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button(txt('continue')):
+        st.session_state.step = 'SURVEY_LAYER'
         st.rerun()
 
-# 8. CONDITIONAL WORKFLOW INTERVENTION ERROR RENDERING
-if st.session_state.c3_freeze_active:
-    st.error(tx["err_c3_freeze"])
+# STAGE G: Systemic Telemetry & Validation Survey Layer Layout
+elif st.session_state.step == 'SURVEY_LAYER':
+    st.title(txt('welcome'))
+    st.subheader(txt('survey_q'))
+    
+    col1, col2, col3, col4 = st.columns(4)
+    score = 0
+    if col1.button(txt('survey_1')): score = 1
+    if col2.button(txt('survey_2')): score = 2
+    if col3.button(txt('survey_3')): score = 3
+    if col4.button(txt('survey_4')): score = 4
+    
+    if score > 0:
+        # Compute exact structural time metrics inside execution frame
+        t_end = time.time()
+        elapsed_seconds = round(t_end - st.session_state.t_start, 2)
+        
+        # Build out production-grade JSON Telemetry Payload Struct
+        telemetry_payload = {
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Language": st.session_state.lang,
+            "Duration_Profile": st.session_state.duration,
+            "Context_Archetype": st.session_state.profile,
+            "Category_Node": st.session_state.category,
+            "Total_Execution_Time_Sec": elapsed_seconds,
+            "Friction_Freeze_Events": st.session_state.freeze_count,
+            "Anxiety_Reduction_Score": score,
+            "C1_Choose_Data": st.session_state.c1_input.replace("\n", " "),
+            "C2_Collect_Data": st.session_state.c2_input.replace("\n", " "),
+            "C3_Connect_Mistake_Data": st.session_state.c3_input.replace("\n", " "),
+            "C4_Create_Solution_Data": st.session_state.c4_input.replace("\n", " ")
+        }
+        
+        st.session_state.final_log = telemetry_payload
+        st.session_state.step = 'COMPLETE'
+        st.rerun()
 
-if st.session_state.c4_freeze_active:
-    st.error(tx["err_c4_freeze"])
-
-# 9. PERFORMANCE TELEMETRY AUDIT TRAIL DATA STREAM
-st.divider()
-st.subheader(tx["telemetry_header"])
-
-col_metric, _ = st.columns([2, 5])
-with col_metric:
-    st.metric(label=tx["telemetry_metric"], value=st.session_state.freeze_count, delta=None)
-
-if st.session_state.telemetry_log:
-    with st.expander("View Payload Stream (JSON Ledger)", expanded=False):
-        st.json(st.session_state.telemetry_log)
+# STAGE H: Terminal Clear & Local Data Dump Display Layout
+elif st.session_state.step == 'COMPLETE':
+    st.markdown(f'<div class="success-box">{txt("final_thanks")}</div>', unsafe_allow_html=True)
+    
+    # Render programmatic runtime telemetry readout locally for structural verification testing
+    st.subheader("📊 System Telemetry Output Log (Verified)")
+    st.json(st.session_state.final_log)
+    
+    if st.button(txt('restart')):
+        # Purge localized runtime stack elements completely to restart the loop safely
+        for key in list(st.session_state.keys()): del st.session_state[key]
+        st.session_state.step = 'LANG_SELECTION'
+        st.session_state.sub_step = 'INPUT_PHASE'
+        st.rerun()
