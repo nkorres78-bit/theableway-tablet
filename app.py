@@ -1,0 +1,248 @@
+import streamlit as st
+import time
+import pandas as pd
+from datetime import datetime
+
+# ==============================================================================
+# 1. INITIAL SYSTEM CONFIGURATION & UI SETUP
+# ==============================================================================
+st.set_page_config(
+    page_title="TheABLEWay System",
+    page_icon="🧩",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
+# Custom CSS for production-grade visual anchors and heavy-duty active friction
+st.markdown("""
+<style>
+    .reportview-container .main .block-container { max-width: 600px; padding-top: 2rem; }
+    .stButton>button { width: 100%; border-radius: 12px; height: 3.5rem; font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem; }
+    div[data-baseweb="textarea"] { border-radius: 12px; }
+    .freeze-box { background-color: #ffe6e6; border: 3px solid #ff4d4d; padding: 1.5rem; border-radius: 16px; color: #cc0000; font-weight: bold; margin-bottom: 1.5rem; text-align: center; }
+    .success-box { background-color: #e6f9ec; border: 3px solid #2db359; padding: 1.5rem; border-radius: 16px; color: #1a6633; font-weight: bold; margin-bottom: 1.5rem; text-align: center; }
+</style>
+""", unsafe_allow_html=True)
+
+# Initialize programmatic telemetry and state tracking arrays
+if 'step' not in st.session_state:
+    st.session_state.step = 'LANG_SELECTION'
+if 'lang' not in st.session_state:
+    st.session_state.lang = 'GR'
+if 'profile' not in st.session_state:
+    st.session_state.profile = None
+if 'category' not in st.session_state:
+    st.session_state.category = None
+if 'duration' not in st.session_state:
+    st.session_state.duration = None
+
+# Telemetry data storage metrics
+if 't_start' not in st.session_state: st.session_state.t_start = time.time()
+if 'freeze_count' not in st.session_state: st.session_state.freeze_count = 0
+if 'c1_input' not in st.session_state: st.session_state.c1_input = ""
+if 'c2_input' not in st.session_state: st.session_state.c2_input = ""
+if 'c3_input' not in st.session_state: st.session_state.c3_input = ""
+if 'c4_input' not in st.session_state: st.session_state.c4_input = ""
+
+# ==============================================================================
+# 2. LOCALIZED SEMANTIC DICTIONARIES (LEXICON SCALABILITY)
+# ==============================================================================
+LEXICON = {
+    'GR': {
+        'welcome': "🧩 TheABLEWay System",
+        'sub': "Γνωστική Σκαλωσιά Διαχείρισης Άγχους",
+        'everyday': "🏡 Καθημερινά Προβλήματα",
+        'business': "💼 Επαγγελματικά / Business",
+        'short_trip': "⏱️ Σύντομη Διαδρομή (< 10 λεπτά)",
+        'long_trip': "🗺️ Μεγάλη Διαδρομή (> 15 λεπτά)",
+        'q_cat': "Πού εντοπίζεται το ζόρι σήμερα;",
+        'cat_love': "❤️ Σχέσεις & Ερωτικά",
+        'cat_fam': "👪 Οικογένεια & Φίλοι",
+        'cat_money': "💸 Δουλειά & Οικονομικά",
+        'cat_gen': "🌀 Άλλο / Προσωπικό",
+        'freeze_msg': "⚠️ WORKFLOW FREEZE! Δεν μπορείς να πας στη λύση αν δεν κοιτάξεις πρώτα το λάθος σου. Συμπλήρωσε το πεδίο.",
+        'submit': "Ολοκλήρωση",
+        'survey_q': "Βοήθησε αυτή η διαδρομή να μειωθεί το άγχος σου;",
+        'survey_1': "Καθόλου", 'survey_2': "Λίγο", 'survey_3': "Αρκετά", 'survey_4': "Πολύ",
+        'final_thanks': "💯 Μπράβο! Η γνωστική σου σκαλωσιά ολοκληρώθηκε. Μόλις άλλαξες τον τρόπο που σκέφτεσαι.",
+        'restart': "Νέα Διαδρομή",
+        'c1_q_biz': "Ποιοι άνθρωποι, ομάδα ή ρόλοι βρίσκονται στο επίκεντρο του προβλήματος;",
+        'c1_q_love': "Ποιος άνθρωπος εμπλέκεται στη σχέση αυτή τη στιγμή;",
+        'c2_q_biz': "Ποια είναι η πιο επείγουσα ανάγκη που πρέπει να καλυφθεί άμεσα;",
+        'c2_q_love': "Τι έχεις περισσότερο ανάγκη από αυτή τη σχέση αυτή τη στιγμή;",
+        'c3_q_biz': "Ποιο είναι το κυριότερο λάθος, παράλειψη ή παρανόηση που έχει γίνει;",
+        'c3_q_love': "Ποιο ήταν το δικό σου λάθος ή η δική σου λάθος αντίδραση στον τελευταίο τσακωμό;",
+        'c4_q_biz': "Ποια είναι η πρώτη, μικρή και άμεση κίνηση που μπορείς να κάνεις;",
+        'c4_q_love': "Ποιο είναι το πρώτο, μικρό βήμα ή μήνυμα που θα στείλεις μόλις κατεβείς;",
+    },
+    'EN': {
+        'welcome': "🧩 TheABLEWay System",
+        'sub': "Cognitive Scaffolding Framework",
+        'everyday': "🏡 Everyday Life Problems",
+        'business': "💼 Business / Corporate",
+        'short_trip': "⏱️ Short Trip (< 10 mins)",
+        'long_trip': "🗺️ Long Trip (> 15 mins)",
+        'q_cat': "Where is the friction originating today?",
+        'cat_love': "❤️ Relationships & Love",
+        'cat_fam': "👪 Family & Friends",
+        'cat_money': "💸 Work & Finances",
+        'cat_gen': "🌀 Personal / Other",
+        'freeze_msg': "⚠️ WORKFLOW FREEZE! You cannot bypass systemic failure parameters. Analyze the core mistake to unlock execution.",
+        'submit': "Complete Execution",
+        'survey_q': "Did this structured trajectory reduce your situational anxiety?",
+        'survey_1': "Not at all", 'survey_2': "Slightly", 'survey_3': "Significantly", 'survey_4': "Completely",
+        'final_thanks': "💯 Execution Verified! Your cognitive scaffolding is complete. Prediction patterns updated.",
+        'restart': "Restart System",
+        'c1_q_biz': "Which individuals, teams, or roles are at the core of this operational block?",
+        'c1_q_love': "Who is the other individual involved in this relational friction?",
+        'c2_q_biz': "What is the most critical demand or need that must be satisfied immediately?",
+        'c2_q_love': "What core need do you require from this dynamic right now?",
+        'c3_q_biz': "What is the fundamental error, omission, or oversight committed so far?",
+        'c3_q_love': "What was your own error, oversight, or reactive misstep during the last friction point?",
+        'c4_q_biz': "What is the exact, single low-risk macro-action you will execute immediately?",
+        'c4_q_love': "What is the first micro-step or message you will send as soon as you exit the vehicle?",
+    }
+}
+
+# Helper to easily pull text values from dictionary
+def txt(key):
+    return LEXICON[st.session_state.lang][key]
+
+# ==============================================================================
+# 3. INTERACTIVE DETERMINISTIC STATE MACHINE FLOWS
+# ==============================================================================
+
+# STAGE A: Language Selection UI Layout
+if st.session_state.step == 'LANG_SELECTION':
+    st.title("🧩 TheABLEWay")
+    st.subheader("Select Language / Επιλογή Γλώσσας")
+    col1, col2 = st.columns(2)
+    if col1.button("ΕΛΛΗΝΙΚΑ 🇬🇷"):
+        st.session_state.lang = 'GR'
+        st.session_state.step = 'DURATION_SELECTION'
+        st.rerun()
+    if col2.button("ENGLISH 🇺🇸"):
+        st.session_state.lang = 'EN'
+        st.session_state.step = 'DURATION_SELECTION'
+        st.rerun()
+
+# STAGE B: Allostatic Adaptive Duration Gating Layout 
+elif st.session_state.step == 'DURATION_SELECTION':
+    st.title(txt('welcome'))
+    st.subheader(txt('sub'))
+    if st.button(txt('short_trip')):
+        st.session_state.duration = 'SHORT'
+        st.session_state.step = 'PROFILE_SELECTION'
+        st.rerun()
+    if st.button(txt('long_trip')):
+        st.session_state.duration = 'LONG'
+        st.session_state.step = 'PROFILE_SELECTION'
+        st.rerun()
+
+# STAGE C: Context Archetype Evaluation Layout
+elif st.session_state.step == 'PROFILE_SELECTION':
+    st.title(txt('welcome'))
+    if st.button(txt('everyday')):
+        st.session_state.profile = 'EVERYDAY'
+        st.session_state.step = 'CATEGORY_SELECTION'
+        st.rerun()
+    if st.button(txt('business')):
+        st.session_state.profile = 'BUSINESS'
+        st.session_state.category = 'CORPORATE'
+        st.session_state.step = 'MATRIX_LOOP'
+        st.rerun()
+
+# STAGE D: Category Granularity Segmentation Layout
+elif st.session_state.step == 'CATEGORY_SELECTION':
+    st.title(txt('welcome'))
+    st.subheader(txt('q_cat'))
+    if st.button(txt('cat_love')): st.session_state.category = 'LOVE'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
+    if st.button(txt('cat_fam')): st.session_state.category = 'FAMILY'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
+    if st.button(txt('cat_money')): st.session_state.category = 'FINANCE'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
+    if st.button(txt('cat_gen')): st.session_state.category = 'GENERAL'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
+
+# STAGE E: Production Execution Matrix Layer (The 4 Cs Matrix Layout)
+elif st.session_state.step == 'MATRIX_LOOP':
+    st.title(txt('welcome'))
+    
+    # Assign context sensitive string prompts based on background state schema
+    if st.session_state.category in ['LOVE', 'FAMILY']:
+        q1, q2, q3, q4 = txt('c1_q_love'), txt('c2_q_love'), txt('c3_q_love'), txt('c4_q_love')
+    else:
+        q1, q2, q3, q4 = txt('c1_q_biz'), txt('c2_q_biz'), txt('c3_q_biz'), txt('c4_q_biz')
+
+    # Force sequential matrix rendering
+    st.session_state.c1_input = st.selectbox(q1, ["", "Myself / Ο εαυτός μου", "Team Member / Συνεργάτης", "Management / Διοίκηση", "External / Τρίτο Πρόσωπο"])
+    
+    if st.session_state.c1_input != "":
+        st.session_state.c2_input = st.text_area(q2, value=st.session_state.c2_input)
+        
+    if st.session_state.c1_input != "" and st.session_state.c2_input.strip() != "":
+        st.session_state.c3_input = st.text_area(q3, value=st.session_state.c3_input)
+        
+    if st.session_state.c1_input != "" and st.session_state.c2_input.strip() != "" and st.session_state.c3_input.strip() != "":
+        st.session_state.c4_input = st.text_area(q4, value=st.session_state.c4_input)
+
+    # Trigger action execution controls
+    if st.button(txt('submit')):
+        # Enforcement of the Active Friction Constraint Check Engine
+        if st.session_state.c3_input.strip() == "":
+            st.session_state.freeze_count += 1
+            st.error(txt('freeze_msg'))
+            st.markdown(f'<div class="freeze-box">{txt("freeze_msg")}</div>', unsafe_allow_html=True)
+        else:
+            st.session_state.step = 'SURVEY_LAYER'
+            st.rerun()
+
+# STAGE F: Systemic Telemetry & Validation Survey Layer Layout
+elif st.session_state.step == 'SURVEY_LAYER':
+    st.title(txt('welcome'))
+    st.subheader(txt('survey_q'))
+    
+    col1, col2, col3, col4 = st.columns(4)
+    score = 0
+    if col1.button(txt('survey_1')): score = 1
+    if col2.button(txt('survey_2')): score = 2
+    if col3.button(txt('survey_3')): score = 3
+    if col4.button(txt('survey_4')): score = 4
+    
+    if score > 0:
+        # Compute exact structural time metrics inside execution frame
+        t_end = time.time()
+        elapsed_seconds = round(t_end - st.session_state.t_start, 2)
+        
+        # Build out production-grade JSON Telemetry Payload Struct
+        telemetry_payload = {
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Language": st.session_state.lang,
+            "Duration_Profile": st.session_state.duration,
+            "Context_Archetype": st.session_state.profile,
+            "Category_Node": st.session_state.category,
+            "Total_Execution_Time_Sec": elapsed_seconds,
+            "Friction_Freeze_Events": st.session_state.freeze_count,
+            "Anxiety_Reduction_Score": score,
+            "C1_Choose_Data": st.session_state.c1_input.replace("\n", " "),
+            "C2_Collect_Data": st.session_state.c2_input.replace("\n", " "),
+            "C3_Connect_Mistake_Data": st.session_state.c3_input.replace("\n", " "),
+            "C4_Create_Solution_Data": st.session_state.c4_input.replace("\n", " ")
+        }
+        
+        # Local Logging Storage Layer Simulation (Mock Data Log Integration Engine)
+        st.session_state.final_log = telemetry_payload
+        st.session_state.step = 'COMPLETE'
+        st.rerun()
+
+# STAGE G: Terminal Clear & Local Data Dump Display Layout
+elif st.session_state.step == 'COMPLETE':
+    st.markdown(f'<div class="success-box">{txt("final_thanks")}</div>', unsafe_allow_html=True)
+    
+    # Render programmatic runtime telemetry readout locally for structural verification testing
+    st.subheader("📊 System Telemetry Output Log (Verified)")
+    st.json(st.session_state.final_log)
+    
+    if st.button(txt('restart')):
+        # Purge localized runtime stack elements completely to restart the loop safely
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.session_state.step = 'LANG_SELECTION'
+        st.rerun()
