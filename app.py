@@ -196,20 +196,25 @@ elif st.session_state.step == 'MATRIX_LOOP':
         options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_team'), txt('opt_mgmt'), txt('opt_ext')]
         q1, q2, q3, q4 = txt('c1_q_biz'), txt('c2_q_biz'), txt('c3_q_biz'), txt('c4_q_biz')
 
-    # Force sequential matrix rendering
+    # Force sequential matrix rendering with key-state tracking to prevent data loss
     st.session_state.c1_input = st.selectbox(q1, options_list)
     
     if st.session_state.c1_input != txt('opt_empty'):
-        st.session_state.c2_input = st.text_area(q2, value=st.session_state.c2_input)
+        st.session_state.c2_input = st.text_area(q2, value=st.session_state.c2_input, key="c2_text")
         
     if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
-        st.session_state.c3_input = st.text_area(q3, value=st.session_state.c3_input)
+        st.session_state.c3_input = st.text_area(q3, value=st.session_state.c3_input, key="c3_text")
         
     if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "" and st.session_state.c3_input.strip() != "":
-        st.session_state.c4_input = st.text_area(q4, value=st.session_state.c4_input)
+        st.session_state.c4_input = st.text_area(q4, value=st.session_state.c4_input, key="c4_text")
 
-    # Trigger action execution controls
+    # Trigger action execution controls and synchronize states before transition
     if st.button(txt('submit')):
+        # Sync widget keys to session state values explicitly
+        if "c2_text" in st.session_state: st.session_state.c2_input = st.session_state.c2_text
+        if "c3_text" in st.session_state: st.session_state.c3_input = st.session_state.c3_text
+        if "c4_text" in st.session_state: st.session_state.c4_input = st.session_state.c4_text
+
         # Enforcement of the Active Friction Constraint Check Engine
         if st.session_state.c3_input.strip() == "":
             st.session_state.freeze_count += 1
