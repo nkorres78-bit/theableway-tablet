@@ -21,20 +21,17 @@ st.markdown("""
     div[data-baseweb="textarea"] { border-radius: 12px; }
     .freeze-box { background-color: #ffe6e6; border: 3px solid #ff4d4d; padding: 1.5rem; border-radius: 16px; color: #cc0000; font-weight: bold; margin-bottom: 1.5rem; text-align: center; }
     .success-box { background-color: #e6f9ec; border: 3px solid #2db359; padding: 1.5rem; border-radius: 16px; color: #1a6633; font-weight: bold; margin-bottom: 1.5rem; text-align: center; }
+    .action-card { background-color: #f7f9fa; border-left: 6px solid #ff9900; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
 </style>
 """, unsafe_allow_html=True)
 
 # Initialize programmatic telemetry and state tracking arrays
-if 'step' not in st.session_state:
-    st.session_state.step = 'LANG_SELECTION'
-if 'lang' not in st.session_state:
-    st.session_state.lang = 'GR'
-if 'profile' not in st.session_state:
-    st.session_state.profile = None
-if 'category' not in st.session_state:
-    st.session_state.category = None
-if 'duration' not in st.session_state:
-    st.session_state.duration = None
+if 'step' not in st.session_state: st.session_state.step = 'LANG_SELECTION'
+if 'lang' not in st.session_state: st.session_state.lang = 'GR'
+if 'profile' not in st.session_state: st.session_state.profile = None
+if 'category' not in st.session_state: st.session_state.category = None
+if 'duration' not in st.session_state: st.session_state.duration = None
+if 'sub_step' not in st.session_state: st.session_state.sub_step = 'INPUT_PHASE'
 
 # Telemetry data storage metrics
 if 't_start' not in st.session_state: st.session_state.t_start = time.time()
@@ -61,7 +58,8 @@ LEXICON = {
         'cat_money': "💸 Δουλειά & Οικονομικά",
         'cat_gen': "🌀 Άλλο / Προσωπικό",
         'freeze_msg': "⚠️ WORKFLOW FREEZE! Δεν μπορείς να πας στη λύση αν δεν κοιτάξεις πρώτα το λάθος σου. Συμπλήρωσε το πεδίο.",
-        'submit': "Ολοκλήρωση",
+        'submit_analysis': "Ανάλυση Λάθους ➔",
+        'submit_solution': "Δημιουργία Action Plan ✔️",
         'survey_q': "Βοήθησε αυτή η διαδρομή να μειωθεί το άγχος σου;",
         'survey_1': "Καθόλου", 'survey_2': "Λίγο", 'survey_3': "Αρκετά", 'survey_4': "Πολύ",
         'final_thanks': "💯 Μπράβο! Η γνωστική σου σκαλωσιά ολοκληρώθηκε. Μόλις άλλαξες τον τρόπο που σκέφτεσαι.",
@@ -83,7 +81,13 @@ LEXICON = {
         'opt_ex': "Πρώην",
         'opt_crush': "Πρόσωπο που με ενδιαφέρει",
         'opt_family': "Γονέας / Παιδί / Συγγενής",
-        'opt_friend': "Φίλος / Κολλητός"
+        'opt_friend': "Φίλος / Κολλητός",
+        'ap_title': "📝 Το Προσωπικό σου Action Plan",
+        'ap_context': "• Η Κατάσταση (Ποιος):",
+        'ap_need': "• Η Ανάγκη σου (Τι):",
+        'ap_mistake': "• Το Σημείο που Κόλλησες (Γιατί):",
+        'ap_action': "• Η Δέσμευσή σου (Πώς):",
+        'continue': "Συνέχεια στην Αξιολόγηση ➔"
     },
     'EN': {
         'welcome': "🧩 TheABLEWay System",
@@ -98,7 +102,8 @@ LEXICON = {
         'cat_money': "💸 Work & Finances",
         'cat_gen': "🌀 Personal / Other",
         'freeze_msg': "⚠️ WORKFLOW FREEZE! You cannot bypass systemic failure parameters. Analyze the core mistake to unlock execution.",
-        'submit': "Complete Execution",
+        'submit_analysis': "Analyze Error ➔",
+        'submit_solution': "Generate Action Plan ✔️",
         'survey_q': "Did this structured trajectory reduce your situational anxiety?",
         'survey_1': "Not at all", 'survey_2': "Slightly", 'survey_3': "Significantly", 'survey_4': "Completely",
         'final_thanks': "💯 Execution Verified! Your cognitive scaffolding is complete. Prediction patterns updated.",
@@ -120,7 +125,13 @@ LEXICON = {
         'opt_ex': "Ex-partner",
         'opt_crush': "Someone I am interested in",
         'opt_family': "Parent / Child / Relative",
-        'opt_friend': "Friend / Close Peer"
+        'opt_friend': "Friend / Close Peer",
+        'ap_title': "📝 Your Personal Action Plan",
+        'ap_context': "• Target Node (Who):",
+        'ap_need': "• Core Objective (What):",
+        'ap_mistake': "• Systemic Friction Point (Why):",
+        'ap_action': "• Strategic Commitment (How):",
+        'continue': "Proceed to Anxiety Review ➔"
     }
 }
 
@@ -138,39 +149,22 @@ if st.session_state.step == 'LANG_SELECTION':
     st.subheader("Select Language / Επιλογή Γλώσσας")
     col1, col2 = st.columns(2)
     if col1.button("ΕΛΛΗΝΙΚΑ 🇬🇷"):
-        st.session_state.lang = 'GR'
-        st.session_state.step = 'DURATION_SELECTION'
-        st.rerun()
+        st.session_state.lang = 'GR'; st.session_state.step = 'DURATION_SELECTION'; st.rerun()
     if col2.button("ENGLISH 🇺🇸"):
-        st.session_state.lang = 'EN'
-        st.session_state.step = 'DURATION_SELECTION'
-        st.rerun()
+        st.session_state.lang = 'EN'; st.session_state.step = 'DURATION_SELECTION'; st.rerun()
 
 # STAGE B: Allostatic Adaptive Duration Gating Layout 
 elif st.session_state.step == 'DURATION_SELECTION':
     st.title(txt('welcome'))
     st.subheader(txt('sub'))
-    if st.button(txt('short_trip')):
-        st.session_state.duration = 'SHORT'
-        st.session_state.step = 'PROFILE_SELECTION'
-        st.rerun()
-    if st.button(txt('long_trip')):
-        st.session_state.duration = 'LONG'
-        st.session_state.step = 'PROFILE_SELECTION'
-        st.rerun()
+    if st.button(txt('short_trip')): st.session_state.duration = 'SHORT'; st.session_state.step = 'PROFILE_SELECTION'; st.rerun()
+    if st.button(txt('long_trip')): st.session_state.duration = 'LONG'; st.session_state.step = 'PROFILE_SELECTION'; st.rerun()
 
 # STAGE C: Context Archetype Evaluation Layout
 elif st.session_state.step == 'PROFILE_SELECTION':
     st.title(txt('welcome'))
-    if st.button(txt('everyday')):
-        st.session_state.profile = 'EVERYDAY'
-        st.session_state.step = 'CATEGORY_SELECTION'
-        st.rerun()
-    if st.button(txt('business')):
-        st.session_state.profile = 'BUSINESS'
-        st.session_state.category = 'CORPORATE'
-        st.session_state.step = 'MATRIX_LOOP'
-        st.rerun()
+    if st.button(txt('everyday')): st.session_state.profile = 'EVERYDAY'; st.session_state.step = 'CATEGORY_SELECTION'; st.rerun()
+    if st.button(txt('business')): st.session_state.profile = 'BUSINESS'; st.session_state.category = 'CORPORATE'; st.session_state.step = 'MATRIX_LOOP'; st.rerun()
 
 # STAGE D: Category Granularity Segmentation Layout
 elif st.session_state.step == 'CATEGORY_SELECTION':
@@ -196,38 +190,60 @@ elif st.session_state.step == 'MATRIX_LOOP':
         options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_team'), txt('opt_mgmt'), txt('opt_ext')]
         q1, q2, q3, q4 = txt('c1_q_biz'), txt('c2_q_biz'), txt('c3_q_biz'), txt('c4_q_biz')
 
-    # Force sequential matrix rendering with key-state tracking to prevent data loss
-    st.session_state.c1_input = st.selectbox(q1, options_list)
-    
-    show_submit = False  # Control variable to hide button until full trajectory sequence or freeze event
-    
-    if st.session_state.c1_input != txt('opt_empty'):
-        st.session_state.c2_input = st.text_area(q2, value=st.session_state.c2_input, key="c2_text")
+    # STEP E1: Input Validation Phase (C1, C2, C3)
+    if st.session_state.sub_step == 'INPUT_PHASE':
+        st.session_state.c1_input = st.selectbox(q1, options_list)
         
-    if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
-        st.session_state.c3_input = st.text_area(q3, value=st.session_state.c3_input, key="c3_text")
-        show_submit = True  # Unlock submit button here so they can hit it to trigger the potential freeze
-        
-    if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "" and st.session_state.c3_input.strip() != "":
+        if st.session_state.c1_input != txt('opt_empty'):
+            st.session_state.c2_input = st.text_area(q2, value=st.session_state.c2_input, key="c2_text")
+            
+        if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
+            st.session_state.c3_input = st.text_area(q3, value=st.session_state.c3_input, key="c3_text")
+            
+        if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
+            if st.button(txt('submit_analysis')):
+                if "c2_text" in st.session_state: st.session_state.c2_input = st.session_state.c2_text
+                if "c3_text" in st.session_state: st.session_state.c3_input = st.session_state.c3_text
+                
+                # Active Friction Enforcement Check
+                if st.session_state.c3_input.strip() == "":
+                    st.session_state.freeze_count += 1
+                    st.markdown(f'<div class="freeze-box">{txt("freeze_msg")}</div>', unsafe_allow_html=True)
+                else:
+                    st.session_state.sub_step = 'SOLUTION_PHASE'
+                    st.rerun()
+
+    # STEP E2: Solution Generation Isolated Phase (C4 only)
+    elif st.session_state.sub_step == 'SOLUTION_PHASE':
+        st.markdown(f"**{q3}**\n\n*{st.session_state.c3_input}*")
+        st.write("---")
         st.session_state.c4_input = st.text_area(q4, value=st.session_state.c4_input, key="c4_text")
-
-    # Trigger action execution controls and synchronize states before transition
-    if show_submit:
-        if st.button(txt('submit')):
-            # Sync widget keys to session state values explicitly
-            if "c2_text" in st.session_state: st.session_state.c2_input = st.session_state.c2_text
-            if "c3_text" in st.session_state: st.session_state.c3_input = st.session_state.c3_text
+        
+        if st.button(txt('submit_solution')):
             if "c4_text" in st.session_state: st.session_state.c4_input = st.session_state.c4_text
+            st.session_state.step = 'ACTION_PLAN_DISPLAY'
+            st.rerun()
 
-            # Enforcement of the Active Friction Constraint Check Engine
-            if st.session_state.c3_input.strip() == "":
-                st.session_state.freeze_count += 1
-                st.markdown(f'<div class="freeze-box">{txt("freeze_msg")}</div>', unsafe_allow_html=True)
-            else:
-                st.session_state.step = 'SURVEY_LAYER'
-                st.rerun()
+# STAGE F: Mirror Feedback Output & Personal Narrative Card Layout
+elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
+    st.title(txt('welcome'))
+    
+    # The Mirror Scaffolding Narrative Card Output Render
+    st.markdown(f"""
+    <div class="action-card">
+        <h3>{txt('ap_title')}</h3>
+        <p><b>{txt('ap_context')}</b> {st.session_state.c1_input}</p>
+        <p><b>{txt('ap_need')}</b> {st.session_state.c2_input}</p>
+        <p><b>{txt('ap_mistake')}</b> {st.session_state.c3_input}</p>
+        <p><b>{txt('ap_action')}</b> <span style='color:#ff9900; font-size:1.2rem;'><b>{st.session_state.c4_input}</b></span></p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button(txt('continue')):
+        st.session_state.step = 'SURVEY_LAYER'
+        st.rerun()
 
-# STAGE F: Systemic Telemetry & Validation Survey Layer Layout
+# STAGE G: Systemic Telemetry & Validation Survey Layer Layout
 elif st.session_state.step == 'SURVEY_LAYER':
     st.title(txt('welcome'))
     st.subheader(txt('survey_q'))
@@ -260,12 +276,11 @@ elif st.session_state.step == 'SURVEY_LAYER':
             "C4_Create_Solution_Data": st.session_state.c4_input.replace("\n", " ")
         }
         
-        # Local Logging Storage Layer Simulation (Mock Data Log Integration Engine)
         st.session_state.final_log = telemetry_payload
         st.session_state.step = 'COMPLETE'
         st.rerun()
 
-# STAGE G: Terminal Clear & Local Data Dump Display Layout
+# STAGE H: Terminal Clear & Local Data Dump Display Layout
 elif st.session_state.step == 'COMPLETE':
     st.markdown(f'<div class="success-box">{txt("final_thanks")}</div>', unsafe_allow_html=True)
     
@@ -275,7 +290,7 @@ elif st.session_state.step == 'COMPLETE':
     
     if st.button(txt('restart')):
         # Purge localized runtime stack elements completely to restart the loop safely
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
+        for key in list(st.session_state.keys()): del st.session_state[key]
         st.session_state.step = 'LANG_SELECTION'
+        st.session_state.sub_step = 'INPUT_PHASE'
         st.rerun()
