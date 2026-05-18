@@ -74,6 +74,16 @@ LEXICON = {
         'c3_q_love': "Ποιο ήταν το δικό σου λάθος ή η δική σου λάθος αντίδραση στον τελευταίο τσακωμό;",
         'c4_q_biz': "Ποια είναι η πρώτη, μικρή και άμεση κίνηση που μπορείς να κάνεις;",
         'c4_q_love': "Ποιο είναι το πρώτο, μικρό βήμα ή μήνυμα που θα στείλεις μόλις κατεβείς;",
+        'opt_empty': "[Επίλεξε...]",
+        'opt_me': "Εγώ ο ίδιος",
+        'opt_team': "Συνεργάτης / Ομάδα",
+        'opt_mgmt': "Διοίκηση / Αφεντικό",
+        'opt_ext': "Εξωτερικός / Τρίτος",
+        'opt_partner': "Σύντροφος / Σύζυγος",
+        'opt_ex': "Πρώην",
+        'opt_crush': "Πρόσωπο που με ενδιαφέρει",
+        'opt_family': "Γονέας / Παιδί / Συγγενής",
+        'opt_friend': "Φίλος / Κολλητός"
     },
     'EN': {
         'welcome': "🧩 TheABLEWay System",
@@ -101,6 +111,16 @@ LEXICON = {
         'c3_q_love': "What was your own error, oversight, or reactive misstep during the last friction point?",
         'c4_q_biz': "What is the exact, single low-risk macro-action you will execute immediately?",
         'c4_q_love': "What is the first micro-step or message you will send as soon as you exit the vehicle?",
+        'opt_empty': "[Select...]",
+        'opt_me': "Myself",
+        'opt_team': "Team Member / Peer",
+        'opt_mgmt': "Management / Boss",
+        'opt_ext': "External / Third Party",
+        'opt_partner': "Partner / Spouse",
+        'opt_ex': "Ex-partner",
+        'opt_crush': "Someone I am interested in",
+        'opt_family': "Parent / Child / Relative",
+        'opt_friend': "Friend / Close Peer"
     }
 }
 
@@ -165,22 +185,27 @@ elif st.session_state.step == 'CATEGORY_SELECTION':
 elif st.session_state.step == 'MATRIX_LOOP':
     st.title(txt('welcome'))
     
-    # Assign context sensitive string prompts based on background state schema
-    if st.session_state.category in ['LOVE', 'FAMILY']:
+    # Dynamic Options Assignment based on Category Context Map
+    if st.session_state.category == 'LOVE':
+        options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_partner'), txt('opt_ex'), txt('opt_crush')]
+        q1, q2, q3, q4 = txt('c1_q_love'), txt('c2_q_love'), txt('c3_q_love'), txt('c4_q_love')
+    elif st.session_state.category == 'FAMILY':
+        options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_family'), txt('opt_friend')]
         q1, q2, q3, q4 = txt('c1_q_love'), txt('c2_q_love'), txt('c3_q_love'), txt('c4_q_love')
     else:
+        options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_team'), txt('opt_mgmt'), txt('opt_ext')]
         q1, q2, q3, q4 = txt('c1_q_biz'), txt('c2_q_biz'), txt('c3_q_biz'), txt('c4_q_biz')
 
     # Force sequential matrix rendering
-    st.session_state.c1_input = st.selectbox(q1, ["", "Myself / Ο εαυτός μου", "Team Member / Συνεργάτης", "Management / Διοίκηση", "External / Τρίτο Πρόσωπο"])
+    st.session_state.c1_input = st.selectbox(q1, options_list)
     
-    if st.session_state.c1_input != "":
+    if st.session_state.c1_input != txt('opt_empty'):
         st.session_state.c2_input = st.text_area(q2, value=st.session_state.c2_input)
         
-    if st.session_state.c1_input != "" and st.session_state.c2_input.strip() != "":
+    if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
         st.session_state.c3_input = st.text_area(q3, value=st.session_state.c3_input)
         
-    if st.session_state.c1_input != "" and st.session_state.c2_input.strip() != "" and st.session_state.c3_input.strip() != "":
+    if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "" and st.session_state.c3_input.strip() != "":
         st.session_state.c4_input = st.text_area(q4, value=st.session_state.c4_input)
 
     # Trigger action execution controls
@@ -188,7 +213,6 @@ elif st.session_state.step == 'MATRIX_LOOP':
         # Enforcement of the Active Friction Constraint Check Engine
         if st.session_state.c3_input.strip() == "":
             st.session_state.freeze_count += 1
-            st.error(txt('freeze_msg'))
             st.markdown(f'<div class="freeze-box">{txt("freeze_msg")}</div>', unsafe_allow_html=True)
         else:
             st.session_state.step = 'SURVEY_LAYER'
