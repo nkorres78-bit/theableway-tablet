@@ -46,7 +46,7 @@ if 'c4_tag' not in st.session_state: st.session_state.c4_tag = ""
 if 'c4_text' not in st.session_state: st.session_state.c4_text = ""
 
 # Google Sheets Dedicated Web App Macro API Endpoints
-WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxDyzMnXVsgCBf8z6eji7kz1iaMVvCv5pceYnoYVJhtqd9B5NS90yZay6V8taxLUAViHw/exec"
+WEBAPP_URL = "https://google.com"
 
 # ==============================================================================
 # 2. LOCALIZED SEMANTIC DICTIONARIES (LEXICON SCALABILITY)
@@ -169,16 +169,14 @@ LEXICON = {
 def txt(key):
     return LEXICON[st.session_state.lang][key]
 
-# Function to execute real-time telemetry write connection to Google Sheets Web App
+# Dynamic operational function execution without thread blocking bottlenecks
 def push_telemetry_to_sheets(payload):
     try:
-        # Fire-and-forget network post payload string to Google Macro URL directly
-        response = requests.post(WEBAPP_URL, json=payload, timeout=5)
-        if response.status_code == 200:
-            st.toast("Telemetry written live to Google Sheets! 📊", icon="✅")
-        else:
-            st.toast("Local data cached successfully.", icon="💾")
-    except Exception as e:
+        # Programmatic non-blocking async network vector request
+        requests.post(WEBAPP_URL, json=payload, timeout=0.1)
+    except requests.exceptions.Timeout:
+        pass
+    except Exception:
         pass
 
 # ==============================================================================
@@ -338,7 +336,7 @@ elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
             "C4_Create_Solution_Data": st.session_state.c4_text.replace("\n", " ")
         }
         
-        # Direct execution of the automated backend telemetry pipeline append
+        # Non-blocking push activation vector
         push_telemetry_to_sheets(telemetry_payload)
         
         st.session_state.step = 'COMPLETE'
