@@ -91,7 +91,6 @@ LEXICON = {
         'ap_need': "• Η Ανάγκη σου (Τι):",
         'ap_mistake': "• Το Σφάλμα (Γιατί):",
         'ap_action': "• Η Δέσμευσή σου (Πώς):",
-        'continue': "Συνέχεια στην Αξιολόγηση ➔",
         'tag_c2_1': "🎭 Ταυτότητα (Να με υπολογίζουν / Να με ακούν)",
         'tag_c2_2': "📊 Πόροι (Χρειάζομαι καθαρά όρια / Ξέμεινα από δυνάμεις)",
         'tag_c2_3': "🗣️ Ροή (Να βρούμε μια κοινή γραμμή / Να συνεννοηθούμε)",
@@ -236,7 +235,6 @@ elif st.session_state.step == 'MATRIX_LOOP':
             
         if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_text.strip() != "":
             if st.button(txt('submit_analysis')):
-                # Sync widget arrays explicitly
                 if "c2_area" in st.session_state: st.session_state.c2_text = st.session_state.c2_area
                 if "c3_area" in st.session_state: st.session_state.c3_text = st.session_state.c3_area
                 
@@ -268,33 +266,30 @@ elif st.session_state.step == 'MATRIX_LOOP':
                 st.session_state.step = 'ACTION_PLAN_DISPLAY'
                 st.rerun()
 
-# STAGE F: Mirror Feedback Output & Personal Narrative Card Layout
+# STAGE F: Unified Mirror Feedback Output & Anxiety Survey Layer
 elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
     st.title(txt('welcome'))
     
     # Extract numerical matrix codes from strings for vector telemetry mapping
-    c2_axis_code = st.session_state.c2_tag[0] if st.session_state.c2_tag else "🌀"
-    c3_axis_code = st.session_state.c3_tag[0] if st.session_state.c3_tag else "🌀"
-    c4_axis_code = st.session_state.c4_tag[0] if st.session_state.c4_tag else "🌀"
+    c2_axis_code = st.session_state.c2_tag if st.session_state.c2_tag else "🌀"
+    c3_axis_code = st.session_state.c3_tag if st.session_state.c3_tag else "🌀"
+    c4_axis_code = st.session_state.c4_tag if st.session_state.c4_tag else "🌀"
     
-    # The Mirror Scaffolding Narrative Card Output Render
+    # Render the Mirror Card firmly at the top of the interface
     st.markdown(f"""
     <div class="action-card">
         <h3>{txt('ap_title')}</h3>
         <p><b>{txt('ap_context')}</b> {st.session_state.c1_input}</p>
-        <p><b>{txt('ap_need')}</b> [{c2_axis_code}] {st.session_state.c2_text}</p>
-        <p><b>{txt('ap_mistake')}</b> [{c3_axis_code}] {st.session_state.c3_text}</p>
-        <p><b>{txt('ap_action')}</b> <span style='color:#ff9900; font-size:1.2rem;'><b>[{c4_axis_code}] {st.session_state.c4_text}</b></span></p>
+        <p><b>{txt('ap_need')}</b> {c2_axis_code}</p>
+        <p style="padding-left: 15px; font-style: italic; color: #555;">"{st.session_state.c2_text}"</p>
+        <p><b>{txt('ap_mistake')}</b> {c3_axis_code}</p>
+        <p style="padding-left: 15px; font-style: italic; color: #555;">"{st.session_state.c3_text}"</p>
+        <p><b>{txt('ap_action')}</b> <span style='color:#ff9900; font-size:1.1rem;'><b>{c4_axis_code}</b></span></p>
+        <p style="padding-left: 15px; font-style: italic; color: #ff9900; font-weight: bold;">"{st.session_state.c4_text}"</p>
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button(txt('continue')):
-        st.session_state.step = 'SURVEY_LAYER'
-        st.rerun()
-
-# STAGE G: Systemic Telemetry & Validation Survey Layer Layout
-elif st.session_state.step == 'SURVEY_LAYER':
-    st.title(txt('welcome'))
+    st.write("---")
     st.subheader(txt('survey_q'))
     
     col1, col2, col3, col4 = st.columns(4)
@@ -305,12 +300,12 @@ elif st.session_state.step == 'SURVEY_LAYER':
     if col4.button(txt('survey_4')): score = 4
     
     if score > 0:
-        # Compute exact structural time metrics inside execution frame
+        # Compute exact structural time metrics inside execution frame secretly
         t_end = time.time()
         elapsed_seconds = round(t_end - st.session_state.t_start, 2)
         
-        # Build out production-grade JSON Telemetry Payload Struct with Vector Diagnostics
-        telemetry_payload = {
+        # Build out production-grade JSON Telemetry Payload Struct κρυφά
+        st.session_state.final_log = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Language": st.session_state.lang,
             "Duration_Profile": st.session_state.duration,
@@ -327,18 +322,12 @@ elif st.session_state.step == 'SURVEY_LAYER':
             "C4_Vector_Selected": st.session_state.c4_tag,
             "C4_Create_Solution_Data": st.session_state.c4_text.replace("\n", " ")
         }
-        
-        st.session_state.final_log = telemetry_payload
         st.session_state.step = 'COMPLETE'
         st.rerun()
 
-# STAGE H: Terminal Clear & Local Data Dump Display Layout
+# STAGE G: Terminal Clean & Local Data Dump Display Layout (No Log Visible)
 elif st.session_state.step == 'COMPLETE':
     st.markdown(f'<div class="success-box">{txt("final_thanks")}</div>', unsafe_allow_html=True)
-    
-    # Render programmatic runtime telemetry readout locally for structural verification testing
-    st.subheader("📊 System Telemetry Output Log (Verified Vector Structure)")
-    st.json(st.session_state.final_log)
     
     if st.button(txt('restart')):
         # Purge localized runtime stack elements completely to restart the loop safely
