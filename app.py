@@ -45,8 +45,8 @@ if 'c3_text' not in st.session_state: st.session_state.c3_text = ""
 if 'c4_tag' not in st.session_state: st.session_state.c4_tag = ""
 if 'c4_text' not in st.session_state: st.session_state.c4_text = ""
 
-# Google Sheets Dedicated Web App Macro API Endpoints
-WEBAPP_URL = "https://google.com"
+# Google Sheets Dedicated URL Configuration
+WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzYCybEI_d20c4TiCPWPhf9vh_xUjZFO21TBG9hPZocMUPkxS0TzQLPAltG1ZiiZfWr8A/exec"
 
 # ==============================================================================
 # 2. LOCALIZED SEMANTIC DICTIONARIES (LEXICON SCALABILITY)
@@ -169,10 +169,9 @@ LEXICON = {
 def txt(key):
     return LEXICON[st.session_state.lang][key]
 
-# Operational function to execute standard telemetry data post using URL Form Format
+# Function to execute real-time telemetry write connection to Google Sheets Web App
 def push_telemetry_to_sheets(payload):
     try:
-        # Changed formatting to standard data application parameters to guarantee web-app acceptance
         requests.post(WEBAPP_URL, data=payload, timeout=5)
     except Exception:
         pass
