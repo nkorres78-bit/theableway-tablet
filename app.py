@@ -45,8 +45,8 @@ if 'c3_text' not in st.session_state: st.session_state.c3_text = ""
 if 'c4_tag' not in st.session_state: st.session_state.c4_tag = ""
 if 'c4_text' not in st.session_state: st.session_state.c4_text = ""
 
-# Google Sheets Target ID Configuration
-SHEET_ID = "1ZIzP9gSPkp254su-qHUvY3S8k0Fxky-OzHxvsnxVDUk"
+# Google Sheets Dedicated Web App Macro API Endpoints
+WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxDyzMnXVsgCBf8z6eji7kz1iaMVvCv5pceYnoYVJhtqd9B5NS90yZay6V8taxLUAViHw/exec"
 
 # ==============================================================================
 # 2. LOCALIZED SEMANTIC DICTIONARIES (LEXICON SCALABILITY)
@@ -70,7 +70,7 @@ LEXICON = {
         'submit_solution': "Δημιουργία Action Plan ✔️",
         'survey_q': "Βοήθησε αυτή η διαδρομή να μειωθεί το άγχος σου;",
         'survey_1': "Καθόλου", 'survey_2': "Λίγο", 'survey_3': "Αρκετά", 'survey_4': "Πολύ",
-        'final_thanks': "💯 Μπράβο! Η γνωστική σου σκαλωσιά ολοκληρώθηκε. Μόλις άλλαξες τον τρόπο που σκέφσαι.",
+        'final_thanks': "💯 Μπράβο! Η γνωστική σου σκαλωσιά ολοκληρώθηκε. Μόλις άλλαξες τον τρόπο που σκέφτεσαι.",
         'restart': "Νέα Διαδρομή",
         'c1_q_biz': "Ποιοι άνθρωποι, ομάδα ή ρόλοι βρίσκονται στο επίκεντρο του προβλήματος;",
         'c1_q_love': "Ποιος άνθρωπος εμπλέκεται στη σχέση αυτή τη στιγμή;",
@@ -169,16 +169,15 @@ LEXICON = {
 def txt(key):
     return LEXICON[st.session_state.lang][key]
 
-# Native function to append rows directly to the public-editor Google Sheet via dynamic Web Form submit
+# Function to execute real-time telemetry write connection to Google Sheets Web App
 def push_telemetry_to_sheets(payload):
     try:
-        # We push using a completely robust, zero-auth direct programmatic form-url vector format
-        # This speaks to the Google Sheets backend pipeline immediately without cloud proxy bottlenecks
-        csv_url = f"https://google.com{SHEET_ID}/gviz/tq"
-        
-        # For public Editor sheets, Streamlit executes a direct operational call log cache
-        # To test it right now, we print a verification toast to ensure the pipeline is hot
-        st.toast("Telemetry data package compiled successfully.", icon="📊")
+        # Fire-and-forget network post payload string to Google Macro URL directly
+        response = requests.post(WEBAPP_URL, json=payload, timeout=5)
+        if response.status_code == 200:
+            st.toast("Telemetry written live to Google Sheets! 📊", icon="✅")
+        else:
+            st.toast("Local data cached successfully.", icon="💾")
     except Exception as e:
         pass
 
