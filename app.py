@@ -169,13 +169,11 @@ LEXICON = {
 def txt(key):
     return LEXICON[st.session_state.lang][key]
 
-# Dynamic operational function execution without thread blocking bottlenecks
+# Operational function to execute standard telemetry synchronous connection parameters
 def push_telemetry_to_sheets(payload):
     try:
-        # Programmatic non-blocking async network vector request
-        requests.post(WEBAPP_URL, json=payload, timeout=0.1)
-    except requests.exceptions.Timeout:
-        pass
+        # Increased network connection boundary threshold to prevent early thread cuts
+        requests.post(WEBAPP_URL, json=payload, timeout=8)
     except Exception:
         pass
 
@@ -336,7 +334,7 @@ elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
             "C4_Create_Solution_Data": st.session_state.c4_text.replace("\n", " ")
         }
         
-        # Non-blocking push activation vector
+        # Synchronous pipeline execution layout
         push_telemetry_to_sheets(telemetry_payload)
         
         st.session_state.step = 'COMPLETE'
@@ -352,3 +350,4 @@ elif st.session_state.step == 'COMPLETE':
         st.session_state.step = 'LANG_SELECTION'
         st.session_state.sub_step = 'INPUT_PHASE'
         st.rerun()
+ 
