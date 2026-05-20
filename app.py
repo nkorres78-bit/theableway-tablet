@@ -169,11 +169,11 @@ LEXICON = {
 def txt(key):
     return LEXICON[st.session_state.lang][key]
 
-# Operational function to execute standard telemetry synchronous connection parameters
+# Operational function to execute standard telemetry data post using URL Form Format
 def push_telemetry_to_sheets(payload):
     try:
-        # Increased network connection boundary threshold to prevent early thread cuts
-        requests.post(WEBAPP_URL, json=payload, timeout=8)
+        # Changed formatting to standard data application parameters to guarantee web-app acceptance
+        requests.post(WEBAPP_URL, data=payload, timeout=5)
     except Exception:
         pass
 
@@ -334,7 +334,7 @@ elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
             "C4_Create_Solution_Data": st.session_state.c4_text.replace("\n", " ")
         }
         
-        # Synchronous pipeline execution layout
+        # Form URL data submit pipeline execution
         push_telemetry_to_sheets(telemetry_payload)
         
         st.session_state.step = 'COMPLETE'
@@ -350,4 +350,3 @@ elif st.session_state.step == 'COMPLETE':
         st.session_state.step = 'LANG_SELECTION'
         st.session_state.sub_step = 'INPUT_PHASE'
         st.rerun()
- 
