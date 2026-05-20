@@ -334,7 +334,7 @@ elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
         t_end = time.time()
         elapsed_seconds = round(t_end - st.session_state.t_start, 2)
         
-        # Build out structural Form URL payload mapping format matching Web App POST proxy
+        # FIXED COUPLING KEY: Force payload mapping back to the public parameter names
         telemetry_payload = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Language": st.session_state.lang,
@@ -345,7 +345,7 @@ elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
             "Friction_Freeze_Events": st.session_state.freeze_count,
             "Anxiety_Reduction_Score": score,
             "C1_Choose_Data": st.session_state.c1_input,
-            "C2_Vector_Selected": st.session_state.c2_tag[:15], # Trim labels for uniform row alignment
+            "To_Vector_Selected": st.session_state.c2_tag[:15], # Hard match to what Google Apps Script expects
             "C2_Collect_Data": st.session_state.c2_text.replace("\n", " "),
             "C3_Vector_Selected": st.session_state.c3_tag[:15],
             "C3_Connect_Mistake_Data": st.session_state.c3_text.replace("\n", " "),
