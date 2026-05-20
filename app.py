@@ -43,8 +43,8 @@ if 'c3_text' not in st.session_state: st.session_state.c3_text = ""
 if 'c4_tag' not in st.session_state: st.session_state.c4_tag = ""
 if 'c4_text' not in st.session_state: st.session_state.c4_text = ""
 
-# Google Sheets Dedicated URL Configuration
-WEBAPP_URL = "https://google.com"
+# Google Sheets Dedicated URL Configuration (NEW ACTIVE WEBAPP LINK)
+WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwFQJ-ozpKXg6mJ5Htu0OHii1xbfzp1wZhovck6yH3EkbHs7x535_2AAHeP3o-y1LLNwA/exec"
 
 # ==============================================================================
 # 2. LOCALIZED SEMANTIC DICTIONARIES (LEXICON SCALABILITY)
@@ -334,7 +334,7 @@ elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
         t_end = time.time()
         elapsed_seconds = round(t_end - st.session_state.t_start, 2)
         
-        # FIXED COUPLING KEY: Force payload mapping back to the public parameter names
+        # Hard link to payload schema matching the new Apps Script deployment
         telemetry_payload = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Language": st.session_state.lang,
@@ -345,11 +345,11 @@ elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
             "Friction_Freeze_Events": st.session_state.freeze_count,
             "Anxiety_Reduction_Score": score,
             "C1_Choose_Data": st.session_state.c1_input,
-            "To_Vector_Selected": st.session_state.c2_tag[:15], # Hard match to what Google Apps Script expects
+            "To_Vector_Selected": st.session_state.c2_tag, # Perfect coupling match
             "C2_Collect_Data": st.session_state.c2_text.replace("\n", " "),
-            "C3_Vector_Selected": st.session_state.c3_tag[:15],
+            "C3_Vector_Selected": st.session_state.c3_tag,
             "C3_Connect_Mistake_Data": st.session_state.c3_text.replace("\n", " "),
-            "C4_Vector_Selected": st.session_state.c4_tag[:15],
+            "C4_Vector_Selected": st.session_state.c4_tag,
             "C4_Create_Solution_Data": st.session_state.c4_text.replace("\n", " ")
         }
         
