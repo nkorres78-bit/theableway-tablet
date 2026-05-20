@@ -37,9 +37,12 @@ if 'sub_step' not in st.session_state: st.session_state.sub_step = 'INPUT_PHASE'
 if 't_start' not in st.session_state: st.session_state.t_start = time.time()
 if 'freeze_count' not in st.session_state: st.session_state.freeze_count = 0
 if 'c1_input' not in st.session_state: st.session_state.c1_input = ""
-if 'c2_input' not in st.session_state: st.session_state.c2_input = ""
-if 'c3_input' not in st.session_state: st.session_state.c3_input = ""
-if 'c4_input' not in st.session_state: st.session_state.c4_input = ""
+if 'c2_tag' not in st.session_state: st.session_state.c2_tag = ""
+if 'c2_text' not in st.session_state: st.session_state.c2_text = ""
+if 'c3_tag' not in st.session_state: st.session_state.c3_tag = ""
+if 'c3_text' not in st.session_state: st.session_state.c3_text = ""
+if 'c4_tag' not in st.session_state: st.session_state.c4_tag = ""
+if 'c4_text' not in st.session_state: st.session_state.c4_text = ""
 
 # ==============================================================================
 # 2. LOCALIZED SEMANTIC DICTIONARIES (LEXICON SCALABILITY)
@@ -57,7 +60,8 @@ LEXICON = {
         'cat_fam': "👪 Οικογένεια & Φίλοι",
         'cat_money': "💸 Δουλειά & Οικονομικά",
         'cat_gen': "🌀 Άλλο / Προσωπικό",
-        'freeze_msg': "⚠️ WORKFLOW FREEZE! Δεν μπορείς να πας στη λύση αν δεν κοιτάξεις πρώτα το λάθος σου. Συμπλήρωσε το πεδίο.",
+        'freeze_c3': "⚠️ WORKFLOW FREEZE! Δεν μπορείς να πας στη λύση αν δεν κοιτάξεις πρώτα το λάθος σου. Συμπλήρωσε το πεδίο.",
+        'freeze_c4': "⚠️ WORKFLOW FREEZE! Δεν μπορείς να ολοκληρώσεις τη διαδρομή αν δεν δεσμευτείς σε μια συγκεκριμένη λύση. Συμπλήρωσε το πεδίο.",
         'submit_analysis': "Ανάλυση Λάθους ➔",
         'submit_solution': "Δημιουργία Action Plan ✔️",
         'survey_q': "Βοήθησε αυτή η διαδρομή να μειωθεί το άγχος σου;",
@@ -66,12 +70,12 @@ LEXICON = {
         'restart': "Νέα Διαδρομή",
         'c1_q_biz': "Ποιοι άνθρωποι, ομάδα ή ρόλοι βρίσκονται στο επίκεντρο του προβλήματος;",
         'c1_q_love': "Ποιος άνθρωπος εμπλέκεται στη σχέση αυτή τη στιγμή;",
-        'c2_q_biz': "Ποια είναι η πιο επείγουσα ανάγκη που πρέπει να καλυφθεί άμεσα;",
-        'c2_q_love': "Τι έχεις περισσότερο ανάγκη από αυτή τη σχέση αυτή τη στιγμή;",
-        'c3_q_biz': "Ποιο είναι το κυριότερο λάθος, παράλειψη ή παρανόηση που έχει γίνει;",
-        'c3_q_love': "Ποιο ήταν το δικό σου λάθος ή η δική σου λάθος αντίδραση στον τελευταίο τσακωμό;",
-        'c4_q_biz': "Ποια είναι η πρώτη, μικρή και άμεση κίνηση που μπορείς να κάνεις;",
-        'c4_q_love': "Ποιο είναι το πρώτο, μικρό βήμα ή μήνυμα που θα στείλεις μόλις κατεβείς;",
+        'c2_q_general': "Ποιος είναι ο κύριος άξονας της ανάγκης σου αυτή τη στιγμή;",
+        'c2_text_prompt': "Εξήγησε σε 1-2 προτάσεις τι ακριβώς σου λείπει:",
+        'c3_q_general': "Πού εντοπίζεται το δικό σου σφάλμα ή η παράλειψη;",
+        'c3_text_prompt': "Γράψε με ειλικρίνεια τι ακριβώς έκανες λάθος:",
+        'c4_q_general': "Ποιος είναι ο τύπος της άμεσης παρέμβασης που θα επιλέξεις;",
+        'c4_text_prompt': "Περίγραψε την ακριβή, μικρή πράξη που θα εκτελέσεις μόλις κατεβείς:",
         'opt_empty': "[Επίλεξε...]",
         'opt_me': "Εγώ ο ίδιος",
         'opt_team': "Συνεργάτης / Ομάδα",
@@ -85,9 +89,21 @@ LEXICON = {
         'ap_title': "📝 Το Προσωπικό σου Action Plan",
         'ap_context': "• Η Κατάσταση (Ποιος):",
         'ap_need': "• Η Ανάγκη σου (Τι):",
-        'ap_mistake': "• Το Σημείο που Κόλλησες (Γιατί):",
+        'ap_mistake': "• Το Σφάλμα (Γιατί):",
         'ap_action': "• Η Δέσμευσή σου (Πώς):",
-        'continue': "Συνέχεια στην Αξιολόγηση ➔"
+        'continue': "Συνέχεια στην Αξιολόγηση ➔",
+        'tag_c2_1': "🎭 Ταυτότητα (Να με υπολογίζουν / Να με ακούν)",
+        'tag_c2_2': "📊 Πόροι (Χρειάζομαι καθαρά όρια / Ξέμεινα από δυνάμεις)",
+        'tag_c2_3': "🗣️ Ροή (Να βρούμε μια κοινή γραμμή / Να συνεννοηθούμε)",
+        'tag_c2_4': "🎯 Μέλλον (Να βρεθεί μια λύση τώρα / Να δω αποτέλεσμα)",
+        'tag_c3_1': "🎭 Ταυτότητα (Κοίταξα μόνο το δικό μου εγώ)",
+        'tag_c3_2': "📊 Πόροι (Το παράκανα / Πίεσα υπερβολικά την κατάσταση)",
+        'tag_c3_3': "🗣️ Ροή (Μίλησα σε λάθος στιγμή ή με λάθος τόνο)",
+        'tag_c3_4': "🎯 Μέλλον (Παρεξήγηση / Υπέθεσα πράγματα χωρίς να ξέρω)",
+        'tag_c4_1': "🎭 Ταυτότητα (Θα αλλάξω στάση / Θα κάνω πίσω)",
+        'tag_c4_2': "📊 Πόροι (Βάζω ένα stop / Προστατεύω τον εαυτό μου)",
+        'tag_c4_3': "🗣️ Ροή (Θα στείλω ένα καθαρό μήνυμα / Θα κάνω μια ευθεία κουβέντα)",
+        'tag_c4_4': "🎯 Μέλλον (Θα κάνω μια συγκεκριμένη, μικρή πράξη)"
     },
     'EN': {
         'welcome': "🧩 TheABLEWay System",
@@ -101,7 +117,8 @@ LEXICON = {
         'cat_fam': "👪 Family & Friends",
         'cat_money': "💸 Work & Finances",
         'cat_gen': "🌀 Personal / Other",
-        'freeze_msg': "⚠️ WORKFLOW FREEZE! You cannot bypass systemic failure parameters. Analyze the core mistake to unlock execution.",
+        'freeze_c3': "⚠️ WORKFLOW FREEZE! You cannot bypass failure analysis. Analyze your error to unlock execution.",
+        'freeze_c4': "⚠️ WORKFLOW FREEZE! You cannot complete execution without defining an action plan. Secure the solution vector.",
         'submit_analysis': "Analyze Error ➔",
         'submit_solution': "Generate Action Plan ✔️",
         'survey_q': "Did this structured trajectory reduce your situational anxiety?",
@@ -110,12 +127,12 @@ LEXICON = {
         'restart': "Restart System",
         'c1_q_biz': "Which individuals, teams, or roles are at the core of this operational block?",
         'c1_q_love': "Who is the other individual involved in this relational friction?",
-        'c2_q_biz': "What is the most critical demand or need that must be satisfied immediately?",
-        'c2_q_love': "What core need do you require from this dynamic right now?",
-        'c3_q_biz': "What is the fundamental error, omission, or oversight committed so far?",
-        'c3_q_love': "What was your own error, oversight, or reactive misstep during the last friction point?",
-        'c4_q_biz': "What is the exact, single low-risk macro-action you will execute immediately?",
-        'c4_q_love': "What is the first micro-step or message you will send as soon as you exit the vehicle?",
+        'c2_q_general': "What is the primary axis of your resource deficiency right now?",
+        'c2_text_prompt': "Explain what you accurately lack in 1-2 sentences:",
+        'c3_q_general': "Where is your operational error or strategic oversight located?",
+        'c3_text_prompt': "Write with absolute sincerity what exactly you executed wrong:",
+        'c4_q_general': "What type of immediate low-risk nudge will you deploy?",
+        'c4_text_prompt': "Describe the exact micro-action you will execute upon exit:",
         'opt_empty': "[Select...]",
         'opt_me': "Myself",
         'opt_team': "Team Member / Peer",
@@ -128,14 +145,25 @@ LEXICON = {
         'opt_friend': "Friend / Close Peer",
         'ap_title': "📝 Your Personal Action Plan",
         'ap_context': "• Target Node (Who):",
-        'ap_need': "• Core Objective (What):",
-        'ap_mistake': "• Systemic Friction Point (Why):",
-        'ap_action': "• Strategic Commitment (How):",
-        'continue': "Proceed to Anxiety Review ➔"
+        'ap_need': "• Systemic Need (What):",
+        'ap_mistake': "• Connection Failure (Why):",
+        'ap_action': "• Active Commitment (How):",
+        'continue': "Proceed to Anxiety Review ➔",
+        'tag_c2_1': "🎭 Identity (To be valued / To be actively heard)",
+        'tag_c2_2': "📊 Resources (Need clear boundaries / Burned out)",
+        'tag_c2_3': "🗣️ Process (Find a common alignment / Synchronize)",
+        'tag_c2_4': "🎯 Future (Need a resolution now / See actual results)",
+        'tag_c3_1': "🎭 Identity (Focused purely on my own ego)",
+        'tag_c3_2': "📊 Resources (Overdid it / Pushed the limits too hard)",
+        'tag_c3_3': "🗣️ Process (Spoke at the wrong moment or wrong tone)",
+        'tag_c3_4': "🎯 Future (Misunderstanding / Made blind assumptions)",
+        'tag_c4_1': "🎭 Identity (I will change my posture / Step back)",
+        'tag_c4_2': "📊 Resources (Set an absolute stop / Protect my limits)",
+        'tag_c4_3': "🗣️ Process (Send a clear text / Direct synchronous talk)",
+        'tag_c4_4': "🎯 Future (Execute a single explicit micro-action)"
     }
 }
 
-# Helper to easily pull text values from dictionary
 def txt(key):
     return LEXICON[st.session_state.lang][key]
 
@@ -182,60 +210,81 @@ elif st.session_state.step == 'MATRIX_LOOP':
     # Dynamic Options Assignment based on Category Context Map
     if st.session_state.category == 'LOVE':
         options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_partner'), txt('opt_ex'), txt('opt_crush')]
-        q1, q2, q3, q4 = txt('c1_q_love'), txt('c2_q_love'), txt('c3_q_love'), txt('c4_q_love')
+        q1 = txt('c1_q_love')
     elif st.session_state.category == 'FAMILY':
         options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_family'), txt('opt_friend')]
-        q1, q2, q3, q4 = txt('c1_q_love'), txt('c2_q_love'), txt('c3_q_love'), txt('c4_q_love')
+        q1 = txt('c1_q_love')
     else:
         options_list = [txt('opt_empty'), txt('opt_me'), txt('opt_team'), txt('opt_mgmt'), txt('opt_ext')]
-        q1, q2, q3, q4 = txt('c1_q_biz'), txt('c2_q_biz'), txt('c3_q_biz'), txt('c4_q_biz')
+        q1 = txt('c1_q_biz')
 
     # STEP E1: Input Validation Phase (C1, C2, C3)
     if st.session_state.sub_step == 'INPUT_PHASE':
         st.session_state.c1_input = st.selectbox(q1, options_list)
         
         if st.session_state.c1_input != txt('opt_empty'):
-            st.session_state.c2_input = st.text_area(q2, value=st.session_state.c2_input, key="c2_text")
+            st.write("---")
+            st.subheader(txt('c2_q_general'))
+            st.session_state.c2_tag = st.radio("Select Axis:", [txt('tag_c2_1'), txt('tag_c2_2'), txt('tag_c2_3'), txt('tag_c2_4')], key="c2_radio")
+            st.session_state.c2_text = st.text_area(txt('c2_text_prompt'), value=st.session_state.c2_text, key="c2_area")
             
-        if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
-            st.session_state.c3_input = st.text_area(q3, value=st.session_state.c3_input, key="c3_text")
+        if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_text.strip() != "":
+            st.write("---")
+            st.subheader(txt('c3_q_general'))
+            st.session_state.c3_tag = st.radio("Select Axis:", [txt('tag_c3_1'), txt('tag_c3_2'), txt('tag_c3_3'), txt('tag_c3_4')], key="c3_radio")
+            st.session_state.c3_text = st.text_area(txt('c3_text_prompt'), value=st.session_state.c3_text, key="c3_area")
             
-        if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_input.strip() != "":
+        if st.session_state.c1_input != txt('opt_empty') and st.session_state.c2_text.strip() != "":
             if st.button(txt('submit_analysis')):
-                if "c2_text" in st.session_state: st.session_state.c2_input = st.session_state.c2_text
-                if "c3_text" in st.session_state: st.session_state.c3_input = st.session_state.c3_text
+                # Sync widget arrays explicitly
+                if "c2_area" in st.session_state: st.session_state.c2_text = st.session_state.c2_area
+                if "c3_area" in st.session_state: st.session_state.c3_text = st.session_state.c3_area
                 
-                # Active Friction Enforcement Check
-                if st.session_state.c3_input.strip() == "":
+                # Active Friction Enforcement Check 1 (C3 Freeze)
+                if st.session_state.c3_text.strip() == "":
                     st.session_state.freeze_count += 1
-                    st.markdown(f'<div class="freeze-box">{txt("freeze_msg")}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="freeze-box">{txt("freeze_c3")}</div>', unsafe_allow_html=True)
                 else:
                     st.session_state.sub_step = 'SOLUTION_PHASE'
                     st.rerun()
 
-    # STEP E2: Solution Generation Isolated Phase (C4 only)
+    # STEP E2: Solution Generation Isolated Phase (C4 only with 2nd Freeze Engine)
     elif st.session_state.sub_step == 'SOLUTION_PHASE':
-        st.markdown(f"**{q3}**\n\n*{st.session_state.c3_input}*")
+        st.markdown(f"**{txt('c3_q_general')}**\n\n*{st.session_state.c3_text}*")
         st.write("---")
-        st.session_state.c4_input = st.text_area(q4, value=st.session_state.c4_input, key="c4_text")
+        
+        st.subheader(txt('c4_q_general'))
+        st.session_state.c4_tag = st.radio("Select Axis:", [txt('tag_c4_1'), txt('tag_c4_2'), txt('tag_c4_3'), txt('tag_c4_4')], key="c4_radio")
+        st.session_state.c4_text = st.text_area(txt('c4_text_prompt'), value=st.session_state.c4_text, key="c4_area")
         
         if st.button(txt('submit_solution')):
-            if "c4_text" in st.session_state: st.session_state.c4_input = st.session_state.c4_text
-            st.session_state.step = 'ACTION_PLAN_DISPLAY'
-            st.rerun()
+            if "c4_area" in st.session_state: st.session_state.c4_text = st.session_state.c4_area
+            
+            # Active Friction Enforcement Check 2 (C4 Freeze)
+            if st.session_state.c4_text.strip() == "":
+                st.session_state.freeze_count += 1
+                st.markdown(f'<div class="freeze-box">{txt("freeze_c4")}</div>', unsafe_allow_html=True)
+            else:
+                st.session_state.step = 'ACTION_PLAN_DISPLAY'
+                st.rerun()
 
 # STAGE F: Mirror Feedback Output & Personal Narrative Card Layout
 elif st.session_state.step == 'ACTION_PLAN_DISPLAY':
     st.title(txt('welcome'))
+    
+    # Extract numerical matrix codes from strings for vector telemetry mapping
+    c2_axis_code = st.session_state.c2_tag[0] if st.session_state.c2_tag else "🌀"
+    c3_axis_code = st.session_state.c3_tag[0] if st.session_state.c3_tag else "🌀"
+    c4_axis_code = st.session_state.c4_tag[0] if st.session_state.c4_tag else "🌀"
     
     # The Mirror Scaffolding Narrative Card Output Render
     st.markdown(f"""
     <div class="action-card">
         <h3>{txt('ap_title')}</h3>
         <p><b>{txt('ap_context')}</b> {st.session_state.c1_input}</p>
-        <p><b>{txt('ap_need')}</b> {st.session_state.c2_input}</p>
-        <p><b>{txt('ap_mistake')}</b> {st.session_state.c3_input}</p>
-        <p><b>{txt('ap_action')}</b> <span style='color:#ff9900; font-size:1.2rem;'><b>{st.session_state.c4_input}</b></span></p>
+        <p><b>{txt('ap_need')}</b> [{c2_axis_code}] {st.session_state.c2_text}</p>
+        <p><b>{txt('ap_mistake')}</b> [{c3_axis_code}] {st.session_state.c3_text}</p>
+        <p><b>{txt('ap_action')}</b> <span style='color:#ff9900; font-size:1.2rem;'><b>[{c4_axis_code}] {st.session_state.c4_text}</b></span></p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -260,7 +309,7 @@ elif st.session_state.step == 'SURVEY_LAYER':
         t_end = time.time()
         elapsed_seconds = round(t_end - st.session_state.t_start, 2)
         
-        # Build out production-grade JSON Telemetry Payload Struct
+        # Build out production-grade JSON Telemetry Payload Struct with Vector Diagnostics
         telemetry_payload = {
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Language": st.session_state.lang,
@@ -270,10 +319,13 @@ elif st.session_state.step == 'SURVEY_LAYER':
             "Total_Execution_Time_Sec": elapsed_seconds,
             "Friction_Freeze_Events": st.session_state.freeze_count,
             "Anxiety_Reduction_Score": score,
-            "C1_Choose_Data": st.session_state.c1_input.replace("\n", " "),
-            "C2_Collect_Data": st.session_state.c2_input.replace("\n", " "),
-            "C3_Connect_Mistake_Data": st.session_state.c3_input.replace("\n", " "),
-            "C4_Create_Solution_Data": st.session_state.c4_input.replace("\n", " ")
+            "C1_Choose_Data": st.session_state.c1_input,
+            "C2_Vector_Selected": st.session_state.c2_tag,
+            "C2_Collect_Data": st.session_state.c2_text.replace("\n", " "),
+            "C3_Vector_Selected": st.session_state.c3_tag,
+            "C3_Connect_Mistake_Data": st.session_state.c3_text.replace("\n", " "),
+            "C4_Vector_Selected": st.session_state.c4_tag,
+            "C4_Create_Solution_Data": st.session_state.c4_text.replace("\n", " ")
         }
         
         st.session_state.final_log = telemetry_payload
@@ -285,7 +337,7 @@ elif st.session_state.step == 'COMPLETE':
     st.markdown(f'<div class="success-box">{txt("final_thanks")}</div>', unsafe_allow_html=True)
     
     # Render programmatic runtime telemetry readout locally for structural verification testing
-    st.subheader("📊 System Telemetry Output Log (Verified)")
+    st.subheader("📊 System Telemetry Output Log (Verified Vector Structure)")
     st.json(st.session_state.final_log)
     
     if st.button(txt('restart')):
